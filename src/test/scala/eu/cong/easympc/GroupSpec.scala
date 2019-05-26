@@ -3,7 +3,7 @@ package eu.cong.easympc
 import java.security.SecureRandom
 
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest._
+import org.scalatest.FlatSpec
 import org.scalatest.prop.Checkers
 
 import scala.util.Random
