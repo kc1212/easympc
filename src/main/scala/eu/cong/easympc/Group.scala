@@ -1,4 +1,4 @@
-package example
+package eu.cong.easympc
 
 import org.bouncycastle.math.ec.{ECFieldElement, ECPoint}
 

@@ -1,4 +1,4 @@
-package example
+package eu.cong.easympc
 
 import java.security.SecureRandom
 
