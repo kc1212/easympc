@@ -59,11 +59,10 @@ object Group {
     new Group[TPt, TFe] {
       private val spec = ECNamedCurveTable.getParameterSpec("curve25519")
       private val curve = spec.getCurve
-      private val multiplier = curve.getMultiplier
 
       override def add(a: TPt, b: TPt): TPt = a.add(b)
       override def mul(p: TPt, s: TFe): TPt =
-        multiplier.multiply(p, s.toBigInteger)
+        curve.getMultiplier.multiply(p, s.toBigInteger)
       override def rand(r: Random): TFe = {
         val x = BigInt(curve.getFieldSize, r) mod spec.getN
         curve.fromBigInteger(x.bigInteger)
