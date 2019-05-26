@@ -1,14 +1,12 @@
 package example
-import Suite._
+
+import java.security.SecureRandom
 
 import scala.util.Random
 
-object Suite {
-  implicit val g: Group[BigInt, BigInt] = Group.bigIntGroup
-  implicit val r: Random = new Random(123)
-}
-
 object Hello extends App {
+  implicit val r: Random = new Random(new SecureRandom())
+  import Group.curve25519
   import Group.{BinaryOps, base, rand}
 
   // key gen
@@ -16,7 +14,7 @@ object Hello extends App {
   val h = base ** x
 
   // encryption
-  val msg = rand()
+  val msg = base ** rand()
   val y = rand()
   val s = h ** y
   val c1 = base ** y
