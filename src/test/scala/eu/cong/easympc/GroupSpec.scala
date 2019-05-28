@@ -1,16 +1,10 @@
 package eu.cong.easympc
 
-import java.security.SecureRandom
-
-import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.FlatSpec
 import org.scalatest.prop.Checkers
 
-import scala.util.Random
-
 class GroupSpec extends FlatSpec with Checkers {
   import Group.{GroupOps, base}
-  val r: Random = new Random(new SecureRandom())
 
   def elgamal[P, S](msg: P, x: S, y: S)(implicit g: Group[P, S]): Boolean = {
     // key gen
@@ -33,21 +27,15 @@ class GroupSpec extends FlatSpec with Checkers {
     Y ** x == X ** y
   }
 
-  implicit def arbScalar(
-    implicit g: Group[_, Group.TFe]
-  ): Arbitrary[Group.TFe] = Arbitrary {
-    Gen.resultOf((_: Int) => g.rand(r))
-  }
+  import ArbitraryHelper._
 
   "curve25519 group" should "correctly run ElGamal" in {
-    import Group.curve25519
-    check(
-      (msg: Group.TFe, x: Group.TFe, y: Group.TFe) => elgamal(base ** msg, x, y)
-    )
+    import Group.curve25519Group
+    check((msg: Group.TFe, x: Group.TFe, y: Group.TFe) => elgamal(base ** msg, x, y))
   }
 
   it should "correctly run DH" in {
-    import Group.curve25519
+    import Group.curve25519Group
     check((x: Group.TFe, y: Group.TFe) => dh(x, y))
   }
 

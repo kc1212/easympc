@@ -5,8 +5,6 @@ import org.bouncycastle.math.ec.{ECFieldElement, ECPoint}
 import scala.math.BigInt
 import scala.util.Random
 
-import org.bouncycastle.jce.ECNamedCurveTable
-
 trait Group[P, S] {
   def add(a: P, b: P): P
   def mul(p: P, s: S): P
@@ -60,9 +58,9 @@ object Group {
 
   type TPt = ECPoint
   type TFe = ECFieldElement
-  implicit val curve25519: Group[TPt, TFe] = {
+  implicit val curve25519Group: Group[TPt, TFe] = {
     new Group[TPt, TFe] {
-      private val spec = ECNamedCurveTable.getParameterSpec("curve25519")
+      private val spec = Spec.curve25519
       private val curve = spec.getCurve
 
       override def add(a: TPt, b: TPt): TPt = a.add(b)
