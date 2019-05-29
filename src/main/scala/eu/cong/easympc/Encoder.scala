@@ -15,7 +15,7 @@ object Encoder {
   def decode[T](buf: Array[Byte])(implicit enc: Encoder[T]): Try[T] =
     enc.decode(buf)
 
-  implicit class EncodableOps[T](x: T)(implicit enc: Encoder[T]) {
+  implicit class EncodableOps[T](val x: T)(implicit enc: Encoder[T]) {
     def encode(): Array[Byte] = enc.encode(x)
     def decode(buf: Array[Byte]): Try[T] = enc.decode(buf)
   }

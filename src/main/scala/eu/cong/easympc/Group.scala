@@ -24,7 +24,7 @@ object Group {
   def rand[S]()(implicit g: Group[_, S], r: Random): S = g rand r
   def negate[P](p: P)(implicit g: Group[P, _]): P = g negate p
 
-  implicit class GroupOps[P, S](a: P)(implicit g: Group[P, S]) {
+  implicit class GroupOps[P, S](val a: P)(implicit g: Group[P, S]) {
     def negate(): P = Group.negate(a)
     def ++(b: P): P = Group.add(a, b)
     def **(s: S): P = Group.mul(a, s)
