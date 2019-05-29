@@ -4,7 +4,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.prop.Checkers
 
 class GroupSpec extends FlatSpec with Checkers {
-  import Group.{GroupOps, base}
+  import Group.{PointOps, base}
 
   def elgamal[P, S](msg: P, x: S, y: S)(implicit g: Group[P, S]): Boolean = {
     // key gen

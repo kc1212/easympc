@@ -2,7 +2,7 @@ package eu.cong.easympc
 
 import java.security.SecureRandom
 
-import org.scalacheck.{Arbitrary, Gen}
+import org.scalacheck.Arbitrary
 
 import scala.util.Random
 
@@ -18,7 +18,7 @@ object ArbitraryHelper {
   }
 
   implicit def arbPoint(implicit g: Group[Group.TPt, Group.TFe]): Arbitrary[Group.TPt] = Arbitrary {
-    import Group.GroupOps
+    import Group.PointOps
     arbScalar.arbitrary.map { g.base ** _ }
   }
 
