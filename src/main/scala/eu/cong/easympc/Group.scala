@@ -13,8 +13,8 @@ trait Group[P, S] {
 
   def scalarAdd(a: S, b: S): S
   def scalarMul(a: S, b: S): S
-  def scalarSub(a: S, b: S): S
   def scalarDiv(a: S, b: S): S
+  def scalarNeg(a: S): S
   def fromBigInt(x: BigInt): S
   def rand(r: Random): S
 
@@ -35,8 +35,8 @@ object Group {
 
   def scalarAdd[S](a: S, b: S)(implicit g: Group[_, S]): S = g.scalarAdd(a, b)
   def scalarMul[S](a: S, b: S)(implicit g: Group[_, S]): S = g.scalarMul(a, b)
-  def scalarSub[S](a: S, b: S)(implicit g: Group[_, S]): S = g.scalarSub(a, b)
   def scalarDiv[S](a: S, b: S)(implicit g: Group[_, S]): S = g.scalarDiv(a, b)
+  def scalarNeg[S](a: S)(implicit g: Group[_, S]): S = g.scalarNeg(a)
   def rand[S]()(implicit g: Group[_, S], r: Random): S = g rand r
 
   implicit class PointOps[P, S](val a: P)(implicit g: Group[P, S]) {
@@ -49,7 +49,7 @@ object Group {
   implicit class ScalarOps[S](a: S)(implicit g: Group[_, S]) {
     def +++(b: S): S = Group.scalarAdd(a, b)
     def ***(b: S): S = Group.scalarMul(a, b)
-    def ---(b: S): S = Group.scalarSub(a, b)
+    def ---(b: S): S = Group.scalarAdd(a, Group.scalarNeg(b))
     def div(b: S): S = Group.scalarDiv(a, b)
   }
 
@@ -61,7 +61,7 @@ object Group {
 
       override def scalarAdd(a: BigInt, b: BigInt): BigInt = (a + b) mod p
       override def scalarMul(a: BigInt, b: BigInt): BigInt = (a * b) mod p
-      override def scalarSub(a: BigInt, b: BigInt): BigInt = (a - b) mod p
+      override def scalarNeg(a: BigInt): BigInt = -a mod p
       override def scalarDiv(a: BigInt, b: BigInt): BigInt = a * b.modInverse(p) mod p
       override def fromBigInt(x: BigInt): BigInt = x
       override def rand(r: Random): BigInt = BigInt(p.bitCount, r) mod p
@@ -100,7 +100,7 @@ object Group {
 
       override def scalarAdd(a: TFe, b: TFe): TFe = a.add(b)
       override def scalarMul(a: TFe, b: TFe): TFe = a.multiply(b)
-      override def scalarSub(a: TFe, b: TFe): TFe = ???
+      override def scalarNeg(a: TFe): TFe = a.negate()
       override def scalarDiv(a: TFe, b: TFe): TFe = a.divide(b)
       override def fromBigInt(x: BigInt): TFe = curve.fromBigInteger(x.bigInteger)
       override def rand(r: Random): TFe = {

@@ -7,6 +7,9 @@ import Group._
 object SecretSharing {
   def share[S](secret: Option[S], t: Int, n: Int)(implicit g: Group[_, S],
                                                   r: Random): Seq[(S, S)] = {
+    if (t > n) {
+      throw new IllegalArgumentException
+    }
     // generate t coefficients
     val coeff0: S = secret match {
       case Some(v) => v

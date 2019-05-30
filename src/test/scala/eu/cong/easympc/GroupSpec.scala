@@ -4,6 +4,8 @@ import org.scalatest.FlatSpec
 import org.scalatest.prop.Checkers
 
 class GroupSpec extends FlatSpec with Checkers {
+
+  import ArbitraryHelper.arbScalar
   import Group.{PointOps, base}
 
   def elgamal[P, S](msg: P, x: S, y: S)(implicit g: Group[P, S]): Boolean = {
@@ -26,8 +28,6 @@ class GroupSpec extends FlatSpec with Checkers {
     val Y = base ** y
     Y ** x == X ** y
   }
-
-  import ArbitraryHelper._
 
   "curve25519 group" should "correctly run ElGamal" in {
     import Group.curve25519Group
