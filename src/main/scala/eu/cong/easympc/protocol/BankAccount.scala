@@ -1,37 +1,38 @@
 package eu.cong.easympc.protocol
 
-import akka.actor.{Actor, Props}
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorRef, Behavior}
 
 object BankAccount {
-  def prop(initialBalance: Int): Props = Props(new BankAccount(initialBalance))
+  sealed trait Command
 
-  case class Deposit(amount: Int)
-  case class Withdraw(amount: Int)
-  case object Balance
-  case object Done
-  case object Failed
-}
+  final case class GetBalance(replyTo: ActorRef[Balance]) extends Command
+  final case class Balance(balance: Long)
 
-class BankAccount(initialBalance: Int) extends Actor {
-  require(initialBalance >= 0)
-  import BankAccount._
+  final case class Deposit(amount: Long, replyTo: ActorRef[Deposited.type]) extends Command
+  final case object Deposited
 
-  private var balance = initialBalance
+  final case class Withdraw(amount: Long, replyTo: ActorRef[WithdrawReply]) extends Command
+  sealed trait WithdrawReply
+  final case object Withdrawn extends WithdrawReply
+  final case object WithdrawFailed extends WithdrawReply
 
-  override def receive: Receive = {
-    case Deposit(amount) =>
-      balance += amount
-      sender ! Done
-    case Withdraw(amount) =>
-      if (balance < amount) {
-        sender ! Failed
-      } else {
-        balance -= amount
-        sender ! Done
-      }
-    case Balance =>
-      sender ! balance
-    case _ =>
-      sender ! Failed
+  def apply(balance: Long): Behavior[Command] = {
+    Behaviors.receiveMessage {
+      case Deposit(amount, to) =>
+        to ! Deposited
+        BankAccount(balance + amount)
+      case GetBalance(to) =>
+        to ! Balance(balance)
+        Behavior.same
+      case Withdraw(amount, to) =>
+        if (balance < amount) {
+          to ! WithdrawFailed
+          Behaviors.same
+        } else {
+          to ! Withdrawn
+          BankAccount(balance - amount)
+        }
+    }
   }
 }

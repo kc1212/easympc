@@ -1,51 +1,47 @@
 package eu.cong.easympc.protocol
 
-import akka.actor.ActorSystem
-import akka.testkit.{ImplicitSender, TestKit}
+import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
-
 import WireTransfer._
+import eu.cong.easympc.protocol.BankAccount.{Balance, GetBalance}
 
-class WireTransferSpec()
-    extends TestKit(ActorSystem("WireTransferSpec"))
-    with ImplicitSender
-    with WordSpecLike
-    with Matchers
-    with BeforeAndAfterAll {
+class WireTransferSpec() extends WordSpecLike with Matchers with BeforeAndAfterAll {
+  val testKit = ActorTestKit()
 
-  override def afterAll: Unit = {
-    TestKit.shutdownActorSystem(system)
-  }
+  override def afterAll(): Unit = testKit.shutdownTestKit()
 
   "a WireTransfer actor" must {
     "succeed when the sender and receiver are working" in {
-      val xfer = system.actorOf(WireTransfer.prop)
-      val alice = system.actorOf(BankAccount.prop(100))
-      val bob = system.actorOf(BankAccount.prop(200))
+      val alice = testKit.spawn(BankAccount(10), "alice")
+      val bob = testKit.spawn(BankAccount(20), "bob")
+      val probe = testKit.createTestProbe[Resp]()
 
-      xfer ! Transfer(alice, bob, 100)
-      expectMsg(Done)
-      alice ! BankAccount.Balance
-      expectMsg(0)
-      bob ! BankAccount.Balance
-      expectMsg(300)
+      testKit.spawn(WireTransfer(probe.ref, alice, bob, 10))
+      probe.expectMessage(Done)
+
+      val balanceProbe = testKit.createTestProbe[Balance]()
+      alice ! GetBalance(balanceProbe.ref)
+      balanceProbe.expectMessage(Balance(0))
+
+      bob ! GetBalance(balanceProbe.ref)
+      balanceProbe.expectMessage(Balance(30))
+    }
+
+    "fail when the balance is too low" in {
+      val alice = testKit.spawn(BankAccount(10), "alice")
+      val bob = testKit.spawn(BankAccount(20), "bob")
+      val probe = testKit.createTestProbe[Resp]()
+
+      testKit.spawn(WireTransfer(probe.ref, alice, bob, 11))
+      probe.expectMessage(Failed)
     }
 
     "fail when a transfer is made between the same user" in {
-      val xfer = system.actorOf(WireTransfer.prop)
-      val alice = system.actorOf(BankAccount.prop(100))
+      val alice = testKit.spawn(BankAccount(10), "alice")
+      val probe = testKit.createTestProbe[Resp]()
 
-      xfer ! Transfer(alice, alice, 100)
-      expectMsg(Failed)
-    }
-
-    "fail when balance is too low" in {
-      val xfer = system.actorOf(WireTransfer.prop)
-      val alice = system.actorOf(BankAccount.prop(10))
-      val bob = system.actorOf(BankAccount.prop(0))
-
-      xfer ! Transfer(alice, bob, 11)
-      expectMsg(Failed)
+      testKit.spawn(WireTransfer(probe.ref, alice, alice, 1))
+      probe.expectMessage(Failed)
     }
   }
 }
