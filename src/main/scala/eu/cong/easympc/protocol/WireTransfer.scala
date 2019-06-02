@@ -12,20 +12,8 @@ object WireTransfer {
   final case object Done extends Resp
   final case object Failed extends Resp
 
-  private final case object AdaptedWithdrawn extends Command
-  private final case object AdaptedWithdrawFailed extends Command
-  private final case object AdaptedDeposited extends Command
-
-  private val withdrawAdapter = (x: WithdrawReply) =>
-    x match {
-      case Withdrawn      => AdaptedWithdrawn
-      case WithdrawFailed => AdaptedWithdrawFailed
-  }
-
-  private val depositAdapter = (x: Deposited.type) =>
-    x match {
-      case Deposited => AdaptedDeposited
-  }
+  private final case class WithdrawReplyAdapter(msg: WithdrawReply) extends Command
+  private final case class DepositedAdapter(msg: Deposited.type) extends Command
 
   def apply(client: ActorRef[Resp],
             from: ActorRef[Withdraw],
@@ -37,7 +25,8 @@ object WireTransfer {
         client ! Failed
         Behaviors.stopped
       } else {
-        from ! Withdraw(amount, ctx.messageAdapter(withdrawAdapter))
+        val adapter = ctx.messageAdapter(WithdrawReplyAdapter)
+        from ! Withdraw(amount, adapter)
         awaitWithdraw(to, amount, client)
       }
     }
@@ -47,13 +36,16 @@ object WireTransfer {
                             amount: Long,
                             client: ActorRef[Resp]): Behavior[Command] = {
     Behaviors.receive {
-      case (_, AdaptedWithdrawFailed) =>
-        client ! Failed
-        Behaviors.stopped
-      case (ctx, AdaptedWithdrawn) =>
-        val adapter = ctx.messageAdapter(depositAdapter)
-        to ! Deposit(amount, adapter)
-        awaitDeposit(client)
+      case (ctx, WithdrawReplyAdapter(msg)) =>
+        msg match {
+          case WithdrawFailed =>
+            client ! Failed
+            Behaviors.stopped
+          case Withdrawn =>
+            val adapter = ctx.messageAdapter(DepositedAdapter)
+            to ! Deposit(amount, adapter)
+            awaitDeposit(client)
+        }
       case _ =>
         client ! Failed
         Behaviors.unhandled
@@ -62,7 +54,7 @@ object WireTransfer {
 
   private def awaitDeposit(client: ActorRef[Resp]): Behavior[Command] = {
     Behaviors.receiveMessage {
-      case AdaptedDeposited =>
+      case DepositedAdapter(_) =>
         client ! Done
         Behaviors.stopped
       case _ =>
