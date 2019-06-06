@@ -24,7 +24,7 @@ class SecretSharingSpec extends FlatSpec with PropertyChecks with Matchers {
       case (t: Int, n: Int) =>
         whenever(t > 2 && n <= p && t <= n) {
           val secret = rand()
-          val shares = SecretSharing.share(Some(secret), t, n)
+          val shares = SecretSharing.share(secret, t, n)
           shares.size should be(n)
           SecretSharing.combine(shares) should be(secret)
         }
@@ -38,7 +38,7 @@ class SecretSharingSpec extends FlatSpec with PropertyChecks with Matchers {
       case (t: Int, n: Int) =>
         whenever(t > 2 && n <= maxShares && t <= n) {
           val secret = rand()
-          val shares = SecretSharing.share(Some(secret), t, n)
+          val shares = SecretSharing.share(secret, t, n)
           shares.size should be(n)
           SecretSharing.combine(shares) should be(secret)
         }

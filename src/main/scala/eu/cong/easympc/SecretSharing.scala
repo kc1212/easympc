@@ -5,27 +5,32 @@ import scala.util.Random
 import Group._
 
 object SecretSharing {
-  def share[S](secret: Option[S], t: Int, n: Int)(implicit g: Group[_, S],
-                                                  r: Random): Seq[(S, S)] = {
+
+  case class XYShare[S](x: S, y: S)
+  object XYShare {
+    def fromTuples[S](tuples: Seq[(S, S)]): Seq[XYShare[S]] = {
+      tuples.map { x =>
+        XYShare(x._1, x._2)
+      }
+    }
+  }
+
+  def share[S](secret: S, t: Int, n: Int)(implicit g: Group[_, S], r: Random): Seq[XYShare[S]] = {
     if (t > n) {
       throw new IllegalArgumentException
     }
     // generate t coefficients
-    val coeff0: S = secret match {
-      case Some(v) => v
-      case None    => g.rand(r)
-    }
-    val privateCoeff = List(coeff0) ++ (1 until t).map(_ => g.rand(r))
+    val privateCoeff = List(secret) ++ (1 until t).map(_ => g.rand(r))
 
     // evaluate on n points, start at 1 because 0 holds the secret
     val xs = (1 to n).map(g.fromBigInt(_))
     val ys = xs.map(eval(_, privateCoeff))
-    xs zip ys
+    XYShare.fromTuples(xs zip ys)
   }
 
-  def combine[S](shares: Seq[(S, S)])(implicit g: Group[_, S]): S = {
-    val xs = shares.map(_._1)
-    val ys = shares.map(_._2)
+  def combine[S](shares: Seq[XYShare[S]])(implicit g: Group[_, S]): S = {
+    val xs = shares.map(_.x)
+    val ys = shares.map(_.y)
     val x = g.zero
     ys.zipWithIndex
       .map {
