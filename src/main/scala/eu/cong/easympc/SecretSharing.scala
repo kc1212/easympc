@@ -16,9 +16,7 @@ object SecretSharing {
   }
 
   def share[S](secret: S, t: Int, n: Int)(implicit g: Group[_, S], r: Random): Seq[XYShare[S]] = {
-    if (t > n) {
-      throw new IllegalArgumentException
-    }
+    require(t <= n)
     // generate t coefficients
     val privateCoeff = List(secret) ++ (1 until t).map(_ => g.rand(r))
 
