@@ -24,8 +24,8 @@ object Controller {
 
   // These messages are for exchanging shares between controllers.
   // TODO add request ID
-  final case class GetShares[S](replyTo: AR[S]) extends Command[S]
-  final case class Shares[S](from: AR[S], share: XYShare[S]) extends Command[S]
+  final case class GetOneShare[S](replyTo: AR[S]) extends Command[S]
+  final case class OneShares[S](from: AR[S], share: XYShare[S]) extends Command[S]
 
   // These messages are for getting the final result.
   // TODO add request ID
@@ -33,7 +33,7 @@ object Controller {
   final case class Result[S](inner: Map[AR[S], XYShare[S]])
 
   // The adapter is only internal communication.
-  private final case class AdaptedShares[S](shares: Sharing.Shares[S]) extends Command[S]
+  private final case class AdaptedShares[S](shares: SharingActor.Shares[S]) extends Command[S]
 }
 
 /** This is the guardian actor for the BGW protocol. One [[Controller]]
@@ -86,11 +86,11 @@ class Controller[S](ctx: ActorContext[Controller.Command[S]])(implicit g: Group[
         require(n > 2)
 
         // Create a child actor for creating the shares because it is slow on large input.
-        val sharingActor = ctx.spawn(Sharing(g, r), "sharing-child")
+        val sharingActor = ctx.spawn(SharingActor(), "sharing-child")
 
         // Start our own secret sharing process with out own input.
         // The default threshold is n-1 out of n, we may need to revisit it later.
-        sharingActor ! Sharing.Start(input, n - 1, n, ctx.messageAdapter(AdaptedShares(_)))
+        sharingActor ! SharingActor.Start(input, n - 1, n, ctx.messageAdapter(AdaptedShares(_)))
         waitMyShares(expr, input, allControllers)
       case other =>
         buffer.stash(other)
@@ -105,7 +105,7 @@ class Controller[S](ctx: ActorContext[Controller.Command[S]])(implicit g: Group[
 
         // Get shares from the other controllers periodically.
         val cancellables = controllers.map { controller =>
-          (controller, ctx.system.scheduler.schedule(0.second, 500.milliseconds)(controller ! GetShares(ctx.self)))
+          (controller, ctx.system.scheduler.schedule(0.second, 500.milliseconds)(controller ! GetOneShare(ctx.self)))
         }
 
         val mappedShares = controllers zip shares.shares
@@ -120,16 +120,16 @@ class Controller[S](ctx: ActorContext[Controller.Command[S]])(implicit g: Group[
 
   private def compute(state: MainState, cancellable: Map[AR[S], Cancellable]): Behavior[Command[S]] = {
     Behaviors.receiveMessage {
-      case GetShares(replyTo) =>
+      case GetOneShare(replyTo) =>
         state.myShares.get(replyTo) match {
           case Some(s) =>
-            replyTo ! Shares(ctx.self, s)
+            replyTo ! OneShares(ctx.self, s)
             Behaviors.same
           case _ =>
             log.warning("share does not exist")
             Behaviors.same
         }
-      case Shares(from, share) =>
+      case OneShares(from, share) =>
         if (!state.validIDs.contains(from)) {
           log.warning("share for var {} is not in the accepted set", from)
           Behavior.same
