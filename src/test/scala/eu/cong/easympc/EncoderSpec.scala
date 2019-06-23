@@ -42,12 +42,4 @@ class EncoderSpec extends FlatSpec with Checkers {
   it should "fail to decode invalid points" in {
     // TODO
   }
-
-  "curve25519 scalar" should "encode and decode correctly" in {
-    import ArbitraryHelper.arbScalar
-    check((p: Group.TFe) => {
-      val buf = p.encode()
-      p.decode(buf).map(_ == p).get
-    })
-  }
 }

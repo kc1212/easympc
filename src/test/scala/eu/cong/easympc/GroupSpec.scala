@@ -31,12 +31,12 @@ class GroupSpec extends FlatSpec with Checkers {
 
   "curve25519 group" should "correctly run ElGamal" in {
     import Group.curve25519Group
-    check((msg: Group.TFe, x: Group.TFe, y: Group.TFe) => elgamal(base ** msg, x, y))
+    check((msg: BigInt, x: BigInt, y: BigInt) => elgamal(base ** msg, x, y))
   }
 
   it should "correctly run DH" in {
     import Group.curve25519Group
-    check((x: Group.TFe, y: Group.TFe) => dh(x, y))
+    check((x: BigInt, y: BigInt) => dh(x, y))
   }
 
   "big int group" should "correctly run ElGamal" in {

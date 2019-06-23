@@ -1,7 +1,6 @@
 package eu.cong.easympc
 
-import eu.cong.easympc.Group.{TFe, TPt}
-import org.bouncycastle.util.BigIntegers
+import eu.cong.easympc.Group.TPt
 
 import scala.util.{Success, Try}
 
@@ -34,20 +33,6 @@ object Encoder {
       override def encode(x: TPt): Array[Byte] = x.getEncoded(true)
       override def decode(buf: Array[Byte]): Try[TPt] =
         Try(curve.decodePoint(buf))
-    }
-  }
-
-  implicit val curve25519Scalar: Encoder[Group.TFe] = {
-    new Encoder[TFe] {
-      private val spec = Spec.curve25519
-      private val curve = spec.getCurve
-      override def encode(x: TFe): Array[Byte] = x.getEncoded
-      override def decode(buf: Array[Byte]): Try[TFe] = {
-        Try(BigIntegers.fromUnsignedByteArray(buf)).map { x =>
-          if (curve.isValidFieldElement(x)) curve.fromBigInteger(x)
-          else throw new IllegalArgumentException("invalid field element")
-        }
-      }
     }
   }
 }

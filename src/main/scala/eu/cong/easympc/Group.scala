@@ -87,32 +87,28 @@ object Group {
   }
 
   type TPt = ECPoint
-  type TFe = ECFieldElement
-  implicit val curve25519Group: Group[TPt, TFe] = {
-    new Group[TPt, TFe] {
+  implicit val curve25519Group: Group[TPt, BigInt] = {
+    new Group[TPt, BigInt] {
       private val spec = Spec.curve25519
       private val curve = spec.getCurve
 
       override def add(a: TPt, b: TPt): TPt = a.add(b)
-      override def mul(p: TPt, s: TFe): TPt =
-        curve.getMultiplier.multiply(p, s.toBigInteger)
+      override def mul(p: TPt, s: BigInt): TPt =
+        curve.getMultiplier.multiply(p, s.bigInteger)
       override def negate(p: TPt): TPt = p.negate()
 
-      override def scalarAdd(a: TFe, b: TFe): TFe = a.add(b)
-      override def scalarMul(a: TFe, b: TFe): TFe = a.multiply(b)
-      override def scalarNeg(a: TFe): TFe = a.negate()
-      override def scalarDiv(a: TFe, b: TFe): TFe = a.divide(b)
-      override def fromBigInt(x: BigInt): TFe = curve.fromBigInteger(x.bigInteger)
-      override def rand(r: Random): TFe = {
-        val x = BigInt(curve.getFieldSize, r) mod spec.getN
-        curve.fromBigInteger(x.bigInteger)
-      }
+      override def scalarAdd(a: BigInt, b: BigInt): BigInt = a + b
+      override def scalarMul(a: BigInt, b: BigInt): BigInt = a * b
+      override def scalarNeg(a: BigInt): BigInt = a.negate()
+      override def scalarDiv(a: BigInt, b: BigInt): BigInt = (a * b.modInverse(order)).mod(order)
+      override def fromBigInt(x: BigInt): BigInt = x.bigInteger
+      override def rand(r: Random): BigInt = BigInt(curve.getFieldSize, r) mod spec.getN
 
-      override val order: TFe = curve.fromBigInteger(spec.getN)
-      override val zero: TFe = curve.fromBigInteger(BigIntegers.ZERO)
+      override val order: BigInt = spec.getN
+      override val zero: BigInt = BigIntegers.ZERO
       override val base: TPt = spec.getG
       override val inf: TPt = curve.getInfinity
-      override val one: TFe = curve.fromBigInteger(BigIntegers.ONE)
+      override val one: BigInt = BigIntegers.ONE
     }
   }
 }
