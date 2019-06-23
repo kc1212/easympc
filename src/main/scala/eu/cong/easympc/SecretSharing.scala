@@ -1,57 +1,57 @@
 package eu.cong.easympc
 
 import scala.util.Random
-
-import Group._
+import AbGroupScalar.Ops
 
 object SecretSharing {
 
-  case class XYShare[S](x: S, y: S)
+  case class XYShare(x: BigInt, y: BigInt)
   object XYShare {
-    def fromTuples[S](tuples: Seq[(S, S)]): Seq[XYShare[S]] = {
+    def fromTuples[S](tuples: Seq[(BigInt, BigInt)]): Seq[XYShare] = {
       tuples.map { x =>
         XYShare(x._1, x._2)
       }
     }
   }
 
-  def share[S](secret: S, t: Int, n: Int)(implicit g: Group[_, S], r: Random): Seq[XYShare[S]] = {
+  def share(secret: BigInt, t: Int, n: Int)(implicit grp: AbGroupScalar, r: Random): Seq[XYShare] = {
     require(t <= n)
     // generate t coefficients
-    val privateCoeff = List(secret) ++ (1 until t).map(_ => g.rand(r))
+    val privateCoeff = List(secret) ++ (1 until t) map {
+      _ => grp.randElem()
+    }
 
     // evaluate on n points, start at 1 because 0 holds the secret
-    val xs = (1 to n).map(g.fromBigInt(_))
+    val xs = (1 to n).map(BigInt(_))
     val ys = xs.map(eval(_, privateCoeff))
     XYShare.fromTuples(xs zip ys)
   }
 
-  def combine[S](shares: Seq[XYShare[S]])(implicit g: Group[_, S]): S = {
+  def combine(shares: Seq[XYShare])(implicit grp: AbGroupScalar): BigInt = {
     val xs = shares.map(_.x)
     val ys = shares.map(_.y)
-    val x = g.zero
-    ys.zipWithIndex
-      .map {
-        case (y, j) => y *** lagrange_basis(j)(x, xs)
+    val x = grp.empty
+    ys.zipWithIndex.map {
+        case (y: BigInt, j: Int) => y <*> lagrange_basis(j)(x, xs)
       }
-      .foldLeft(g.zero)(_ +++ _)
+      .foldLeft(grp.empty)(_ <+> _)
   }
 
-  private def eval[_, S](x: S, coeffs: Seq[S])(implicit g: Group[_, S]): S = {
+  private def eval(x: BigInt, coeffs: Seq[BigInt])(implicit grp: AbGroupScalar): BigInt = {
     // evaluate the polynomial represented by coeffs at the point x using Horner's method
-    coeffs.reverse.foldLeft(g.order) { (a, b) =>
-      a *** x +++ b
+    coeffs.reverse.foldLeft(grp.order) { (a, b) =>
+      a <*> x <+> b
     }
   }
 
-  private def lagrange_basis[S](j: Int)(x: S, xs: Seq[S])(implicit g: Group[_, S]): S = {
-    var accum = g.one
+  private def lagrange_basis(j: Int)(x: BigInt, xs: Seq[BigInt])(implicit grp: AbGroupScalar): BigInt = {
+    var accum = grp.empty
     if (j < 0 || j >= xs.size) {
       throw new IllegalArgumentException
     }
     for (m <- xs.indices) {
       if (m != j) {
-        accum = accum *** ((x --- xs(m)) div (xs(j) --- xs(m)))
+        accum = accum <*> ((x <-> xs(m)) div (xs(j) <-> xs(m)))
       }
     }
     accum

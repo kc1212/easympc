@@ -1,60 +1,60 @@
 package eu.cong.easympc
 
-import org.bouncycastle.math.ec.{ECFieldElement, ECPoint}
+import org.bouncycastle.math.ec.ECPoint
 import org.bouncycastle.util.BigIntegers
 
-import scala.math.BigInt
 import scala.util.Random
 
-trait Group[P, S] {
+trait Group[P] {
   def add(a: P, b: P): P
-  def mul(p: P, s: S): P
+  def mul(p: P, s: BigInt): P
   def negate(p: P): P
 
-  def scalarAdd(a: S, b: S): S
-  def scalarMul(a: S, b: S): S
-  def scalarDiv(a: S, b: S): S
-  def scalarNeg(a: S): S
-  def fromBigInt(x: BigInt): S
-  def rand(r: Random): S
+  def scalarAdd(a: BigInt, b: BigInt): BigInt
+  def scalarMul(a: BigInt, b: BigInt): BigInt
+  def scalarDiv(a: BigInt, b: BigInt): BigInt
+  def scalarNeg(a: BigInt): BigInt
+  def fromBigInt(x: BigInt): BigInt
+  def rand(r: Random): BigInt
 
-  val order: S
-  val zero: S
-  val one: S
+  val order: BigInt
+  val zero: BigInt
+  val one: BigInt
   val base: P
   val inf: P
 }
 
 object Group {
-  def apply[P, S](implicit g: Group[P, S]): Group[P, S] = g
+  /*
+  def apply[P](implicit g: Group[P]): Group[P] = g
 
-  def add[P](a: P, b: P)(implicit g: Group[P, _]): P = g.add(a, b)
-  def mul[P, S](p: P, s: S)(implicit g: Group[P, S]): P = g.mul(p, s)
-  def neg[P](p: P)(implicit g: Group[P, _]): P = g negate p
-  def base[P]()(implicit g: Group[P, _]): P = g.base
+  def add[P](a: P, b: P)(implicit g: Group[P]): P = g.add(a, b)
+  def mul[P](p: P, s: BigInt)(implicit g: Group[P]): P = g.mul(p, s)
+  def neg[P](p: P)(implicit g: Group[P]): P = g negate p
+  def base[P]()(implicit g: Group[P]): P = g.base
 
-  def scalarAdd[S](a: S, b: S)(implicit g: Group[_, S]): S = g.scalarAdd(a, b)
-  def scalarMul[S](a: S, b: S)(implicit g: Group[_, S]): S = g.scalarMul(a, b)
-  def scalarDiv[S](a: S, b: S)(implicit g: Group[_, S]): S = g.scalarDiv(a, b)
-  def scalarNeg[S](a: S)(implicit g: Group[_, S]): S = g.scalarNeg(a)
-  def rand[S]()(implicit g: Group[_, S], r: Random): S = g rand r
+  def scalarAdd(a: BigInt, b: BigInt)(implicit g: Group[_]): BigInt = g.scalarAdd(a, b)
+  def scalarMul(a: BigInt, b: BigInt)(implicit g: Group[_]): BigInt = g.scalarMul(a, b)
+  def scalarDiv(a: BigInt, b: BigInt)(implicit g: Group[_]): BigInt = g.scalarDiv(a, b)
+  def scalarNeg(a: BigInt)(implicit g: Group[_]): BigInt = g.scalarNeg(a)
+  def rand()(implicit g: Group[_], r: Random): BigInt = g rand r
 
-  implicit class PointOps[P, S](val a: P)(implicit g: Group[P, S]) {
+  implicit class PointOps[P](val a: P)(implicit g: Group[P]) {
     def negate(): P = Group.neg(a)
     def ++(b: P): P = Group.add(a, b)
-    def **(s: S): P = Group.mul(a, s)
+    def **(s: BigInt): P = Group.mul(a, s)
     def --(b: P): P = Group.add(a, Group.neg(b))
   }
 
-  implicit class ScalarOps[S](a: S)(implicit g: Group[_, S]) {
-    def +++(b: S): S = Group.scalarAdd(a, b)
-    def ***(b: S): S = Group.scalarMul(a, b)
-    def ---(b: S): S = Group.scalarAdd(a, Group.scalarNeg(b))
-    def div(b: S): S = Group.scalarDiv(a, b)
+  implicit class ScalarOps[P](a: BigInt)(implicit g: Group[P]) {
+    def +++(b: BigInt): BigInt = Group.scalarAdd(a, b)
+    def ***(b: BigInt): BigInt = Group.scalarMul(a, b)
+    def ---(b: BigInt): BigInt = Group.scalarAdd(a, Group.scalarNeg(b))
+    def div(b: BigInt): BigInt = Group.scalarDiv(a, b)
   }
 
-  def customBigIntGroup(g: BigInt, p: BigInt): Group[BigInt, BigInt] = {
-    new Group[BigInt, BigInt] {
+  def customBigIntGroup(g: BigInt, p: BigInt): Group[BigInt] = {
+    new Group[BigInt] {
       override def add(x: BigInt, y: BigInt): BigInt = (x * y) mod p
       override def mul(x: BigInt, s: BigInt): BigInt = x.modPow(s, p)
       override def negate(x: BigInt): BigInt = x modInverse p
@@ -74,7 +74,7 @@ object Group {
     }
   }
 
-  implicit val bigIntGroup: Group[BigInt, BigInt] = {
+  implicit val bigIntGroup: Group[BigInt] = {
     val g512 = BigInt(
       "153d5d6172adb43045b68ae8e1de1070b6137005686d29d3d73a7749199681ee5b212c9b96bfdcfa5b20cd5e3fd2044895d609cf9b410b7a0f12ca1cb9a428cc",
       16
@@ -87,8 +87,8 @@ object Group {
   }
 
   type TPt = ECPoint
-  implicit val curve25519Group: Group[TPt, BigInt] = {
-    new Group[TPt, BigInt] {
+  implicit val curve25519Group: Group[TPt] = {
+    new Group[TPt] {
       private val spec = Spec.curve25519
       private val curve = spec.getCurve
 
@@ -100,7 +100,7 @@ object Group {
       override def scalarAdd(a: BigInt, b: BigInt): BigInt = a + b
       override def scalarMul(a: BigInt, b: BigInt): BigInt = a * b
       override def scalarNeg(a: BigInt): BigInt = a.negate()
-      override def scalarDiv(a: BigInt, b: BigInt): BigInt = (a * b.modInverse(order)).mod(order)
+      override def scalarDiv(a: BigInt, b: BigInt): BigInt = (a * b.modInverse(order)) mod order
       override def fromBigInt(x: BigInt): BigInt = x.bigInteger
       override def rand(r: Random): BigInt = BigInt(curve.getFieldSize, r) mod spec.getN
 
@@ -111,4 +111,5 @@ object Group {
       override val one: BigInt = BigIntegers.ONE
     }
   }
+   */
 }

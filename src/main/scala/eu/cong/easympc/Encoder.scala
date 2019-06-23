@@ -1,6 +1,6 @@
 package eu.cong.easympc
 
-import eu.cong.easympc.Group.TPt
+import org.bouncycastle.math.ec.ECPoint
 
 import scala.util.{Success, Try}
 
@@ -26,12 +26,12 @@ object Encoder {
     }
   }
 
-  implicit val curve25519Point: Encoder[Group.TPt] = {
-    new Encoder[TPt] {
+  implicit val curve25519Point: Encoder[ECPoint] = {
+    new Encoder[ECPoint] {
       private val spec = Spec.curve25519
       private val curve = spec.getCurve
-      override def encode(x: TPt): Array[Byte] = x.getEncoded(true)
-      override def decode(buf: Array[Byte]): Try[TPt] =
+      override def encode(x: ECPoint): Array[Byte] = x.getEncoded(true)
+      override def decode(buf: Array[Byte]): Try[ECPoint] =
         Try(curve.decodePoint(buf))
     }
   }

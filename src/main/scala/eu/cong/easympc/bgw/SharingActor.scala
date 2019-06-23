@@ -3,18 +3,18 @@ package eu.cong.easympc.bgw
 import akka.actor.typed.scaladsl._
 import akka.actor.typed.{ActorRef, Behavior}
 import eu.cong.easympc.SecretSharing.{XYShare, share}
-import eu.cong.easympc.Group
+import eu.cong.easympc.AbGroupScalar
 
 import scala.util.Random
 
 object SharingActor {
-  def apply[S]()(implicit g: Group[_, S], r: Random): Behavior[SharingActorMsg[S]] =
-    Behaviors.setup(ctx => new SharingActor[S](ctx))
+  def apply[S]()(implicit g: AbGroupScalar, r: Random): Behavior[SharingActorMsg] =
+    Behaviors.setup(ctx => new SharingActor(ctx))
 
-  sealed trait SharingActorMsg[S]
-  final case class Start[S](secret: S, t: Int, n: Int, parent: ActorRef[Shares[S]])(implicit g: Group[_, S])
-      extends SharingActorMsg[S]
-  final case class Shares[S](shares: Seq[XYShare[S]])(implicit g: Group[_, S])
+  sealed trait SharingActorMsg
+  final case class Start(secret: BigInt, t: Int, n: Int, parent: ActorRef[Shares])(implicit g: AbGroupScalar)
+      extends SharingActorMsg
+  final case class Shares(shares: Seq[XYShare])(implicit g: AbGroupScalar)
 
 }
 
@@ -23,12 +23,12 @@ object SharingActor {
   *
   * @param ctx is the actor context.
   */
-class SharingActor[S](ctx: ActorContext[SharingActor.SharingActorMsg[S]])(implicit g: Group[_, S], r: Random)
-    extends AbstractBehavior[SharingActor.SharingActorMsg[S]] {
+class SharingActor(ctx: ActorContext[SharingActor.SharingActorMsg])(implicit g: AbGroupScalar, r: Random)
+    extends AbstractBehavior[SharingActor.SharingActorMsg] {
 
   import SharingActor._
 
-  override def onMessage(msg: SharingActorMsg[S]): Behavior[SharingActorMsg[S]] = {
+  override def onMessage(msg: SharingActorMsg): Behavior[SharingActorMsg] = {
     msg match {
       case Start(secret, t, n, parent) =>
         require(n > t)

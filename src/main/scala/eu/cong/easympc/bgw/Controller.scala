@@ -4,36 +4,36 @@ import akka.actor.Cancellable
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors, StashBuffer}
 import akka.actor.typed.{ActorRef, Behavior}
 import eu.cong.easympc.SecretSharing.XYShare
-import eu.cong.easympc.{Expr, Group}
+import eu.cong.easympc.{AbGroupSuite, Expr, Group}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.util.Random
 
 object Controller {
-  def apply[S](implicit g: Group[_, S], r: Random): Behavior[Command[S]] =
+  def apply[P](implicit grp: AbGroupSuite[P], r: Random): Behavior[Command] =
     Behaviors.setup { ctx =>
       new Controller(ctx)
     }
 
-  private type AR[S] = ActorRef[Command[S]]
+  private type AR = ActorRef[Command]
 
-  sealed trait Command[S]
+  sealed trait Command
 
-  final case class Exec[S](expr: Expr[AR[S], S], input: S, controllers: Set[AR[S]]) extends Command[S]
+  final case class Exec(expr: Expr[AR, BigInt], input: BigInt, controllers: Set[AR]) extends Command
 
   // These messages are for exchanging shares between controllers.
   // TODO add request ID
-  final case class GetOneShare[S](replyTo: AR[S]) extends Command[S]
-  final case class OneShares[S](from: AR[S], share: XYShare[S]) extends Command[S]
+  final case class GetOneShare(replyTo: AR) extends Command
+  final case class OneShares(from: AR, share: XYShare) extends Command
 
   // These messages are for getting the final result.
   // TODO add request ID
-  final case class GetResult[S](replyTo: ActorRef[Result[S]]) extends Command[S]
-  final case class Result[S](inner: Map[AR[S], XYShare[S]])
+  final case class GetResult(replyTo: ActorRef[Result]) extends Command
+  final case class Result(inner: Map[AR, XYShare])
 
   // The adapter is only internal communication.
-  private final case class AdaptedShares[S](shares: SharingActor.Shares[S]) extends Command[S]
+  private final case class AdaptedShares(shares: SharingActor.Shares) extends Command
 }
 
 /** This is the guardian actor for the BGW protocol. One [[Controller]]
@@ -47,8 +47,8 @@ object Controller {
   * computation. We assume all controllers are ready to receive messages
   * before any commands are sent.
   */
-class Controller[S](ctx: ActorContext[Controller.Command[S]])(implicit g: Group[_, S], r: Random)
-    extends AbstractBehavior[Controller.Command[S]] {
+class Controller[P](ctx: ActorContext[Controller.Command])(implicit grp: AbGroupSuite[P], r: Random)
+    extends AbstractBehavior[Controller.Command] {
 
   import Controller._
 
@@ -62,24 +62,24 @@ class Controller[S](ctx: ActorContext[Controller.Command[S]])(implicit g: Group[
     * @param otherShares is a mutable map, the key is the var ID, the
     *                 value is the share from others
     */
-  private class MainState(val expr: Expr[AR[S], S],
-                          val input: S,
-                          val controllers: Set[AR[S]],
-                          val myShares: Map[AR[S], XYShare[S]],
-                          var otherShares: Map[AR[S], XYShare[S]]) {
-    val validIDs: Set[AR[S]] = Expr.GetVars(expr).map(_.x).toSet
+  private class MainState(val expr: Expr[AR, BigInt],
+                          val input: BigInt,
+                          val controllers: Set[AR],
+                          val myShares: Map[AR, XYShare],
+                          var otherShares: Map[AR, XYShare]) {
+    val validIDs: Set[AR] = Expr.GetVars(expr).map(_.x).toSet
     def finished(): Boolean = validIDs subsetOf otherShares.keySet
   }
 
   implicit val ec: ExecutionContext = ctx.executionContext
   private val log = ctx.log
 
-  override def onMessage(msg: Controller.Command[S]): Behavior[Controller.Command[S]] =
+  override def onMessage(msg: Controller.Command): Behavior[Controller.Command] =
     waitStart
 
-  private val buffer = StashBuffer[Command[S]](capacity = 100)
+  private val buffer = StashBuffer[Command](capacity = 100)
 
-  private def waitStart: Behavior[Command[S]] = {
+  private def waitStart: Behavior[Command] = {
     Behaviors.receiveMessage {
       case Exec(expr, input, allControllers) =>
         val n = allControllers.size
@@ -98,7 +98,7 @@ class Controller[S](ctx: ActorContext[Controller.Command[S]])(implicit g: Group[
     }
   }
 
-  private def waitMyShares(expr: Expr[AR[S], S], input: S, controllers: Set[AR[S]]): Behavior[Command[S]] = {
+  private def waitMyShares(expr: Expr[AR, BigInt], input: BigInt, controllers: Set[AR]): Behavior[Command] = {
     Behaviors.receiveMessage {
       case AdaptedShares(shares) =>
         require(shares.shares.size == controllers.size)
@@ -118,7 +118,7 @@ class Controller[S](ctx: ActorContext[Controller.Command[S]])(implicit g: Group[
     }
   }
 
-  private def compute(state: MainState, cancellable: Map[AR[S], Cancellable]): Behavior[Command[S]] = {
+  private def compute(state: MainState, cancellable: Map[AR, Cancellable]): Behavior[Command] = {
     Behaviors.receiveMessage {
       case GetOneShare(replyTo) =>
         state.myShares.get(replyTo) match {

@@ -8,5 +8,6 @@ class ExprSpec extends WordSpecLike with Matchers {
       // TODO quickcheck
       Expr.GetVars(Mul[Int, String](Var(1), Add(Val("abc"), Var(2)))) should equal(Seq(Var(1), Var(2)))
     }
+
   }
 }
