@@ -1,4 +1,4 @@
-ThisBuild / scalaVersion     := "2.12.8"
+ThisBuild / scalaVersion     := "2.13.0"
 ThisBuild / version          := "0.1.0-SNAPSHOT"
 ThisBuild / organization     := "eu.cong"
 
@@ -16,7 +16,7 @@ lazy val root = (project in file("."))
       "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion,
       "org.typelevel" %% "spire" % spireVersion,
       // test
-      "org.scalatest" %% "scalatest" % "3.0.5" % Test,
+      "org.scalatest" %% "scalatest" % "3.0.8" % Test,
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.typelevel" %% "spire-laws" % spireVersion % Test,
     ),

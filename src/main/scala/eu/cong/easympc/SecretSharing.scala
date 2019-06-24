@@ -30,11 +30,11 @@ object SecretSharing {
   def combine(shares: Seq[XYShare])(implicit grp: AbGroupScalar): BigInt = {
     val xs = shares.map(_.x)
     val ys = shares.map(_.y)
-    val x = grp.empty
+    val x = BigInt(0)
     ys.zipWithIndex.map {
         case (y: BigInt, j: Int) => y <*> lagrange_basis(j)(x, xs)
       }
-      .foldLeft(grp.empty)(_ <+> _)
+      .foldLeft(BigInt(0))(_ <+> _)
   }
 
   private def eval(x: BigInt, coeffs: Seq[BigInt])(implicit grp: AbGroupScalar): BigInt = {

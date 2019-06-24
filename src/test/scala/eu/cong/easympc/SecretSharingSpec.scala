@@ -3,14 +3,12 @@ package eu.cong.easympc
 import java.security.SecureRandom
 
 import org.scalacheck.Gen
-import org.scalatest.Matchers
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.prop.PropertyChecks
+import org.scalatest.{FlatSpec, Matchers}
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 import scala.util.Random
 
-class SecretSharingSpec extends AnyFlatSpec with PropertyChecks with Matchers {
-  /*
+class SecretSharingSpec extends FlatSpec with ScalaCheckDrivenPropertyChecks with Matchers {
   implicit private val r: Random = new Random(new SecureRandom())
   private def pairGen(max: Int) =
     for {
@@ -20,7 +18,7 @@ class SecretSharingSpec extends AnyFlatSpec with PropertyChecks with Matchers {
 
   "int group" should "correctly share secrets in a small group" in {
     val p = 23
-    implicit val smallGroup: AbGroupScalar = AbGroupScalar.fromOrder(p)
+    implicit val smallGroup: AbGroupScalar = AbGroupScalar.multiplicativeGroupFromOrder(p)
     forAll(pairGen(p)) {
       case (t: Int, n: Int) =>
         whenever(t > 2 && n <= p && t <= n) {
@@ -34,17 +32,15 @@ class SecretSharingSpec extends AnyFlatSpec with PropertyChecks with Matchers {
 
   it should "correctly share secrets in a large group" in {
     val maxShares = 66
-    implicit val g: AbGroupScalar[BigInt, BigInt] = Group.bigIntGroup
+    implicit val grp: AbGroupScalar = AbGroupScalar.curve25519Scalar
     forAll(pairGen(maxShares)) {
       case (t: Int, n: Int) =>
         whenever(t > 2 && n <= maxShares && t <= n) {
-          val secret = rand()
+          val secret = grp.randElem()
           val shares = SecretSharing.share(secret, t, n)
           shares.size should be(n)
           SecretSharing.combine(shares) should be(secret)
         }
     }
   }
-
-   */
 }

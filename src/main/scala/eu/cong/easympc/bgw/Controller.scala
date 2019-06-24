@@ -4,7 +4,7 @@ import akka.actor.Cancellable
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors, StashBuffer}
 import akka.actor.typed.{ActorRef, Behavior}
 import eu.cong.easympc.SecretSharing.XYShare
-import eu.cong.easympc.{AbGroupSuite, Expr, Group}
+import eu.cong.easympc.{AbGroupSuite, Expr}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -90,7 +90,7 @@ class Controller[P](ctx: ActorContext[Controller.Command])(implicit grp: AbGroup
 
         // Start our own secret sharing process with out own input.
         // The default threshold is n-1 out of n, we may need to revisit it later.
-        sharingActor ! SharingActor.Start(input, n - 1, n, ctx.messageAdapter(AdaptedShares(_)))
+        sharingActor ! SharingActor.Start(input, n - 1, n, ctx.messageAdapter(AdaptedShares))
         waitMyShares(expr, input, allControllers)
       case other =>
         buffer.stash(other)

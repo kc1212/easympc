@@ -10,6 +10,6 @@ object AbGroupSuite {
     new AbGroupSuite[P] {
       override val pointGroup: AbGroupPoint[P] = p
 
-      override val scalarGroup: AbGroupScalar = AbGroupScalar.fromOrder(p.order)
+      override val scalarGroup: AbGroupScalar = AbGroupScalar.multiplicativeGroupFromOrder(p.order)
     }
 }

@@ -11,7 +11,7 @@ trait AbGroupScalar extends AbGroup[BigInt] with Rand[BigInt] with Eq[BigInt] {
 
 object AbGroupScalar {
 
-  def fromOrder(ord: BigInt): AbGroupScalar = new AbGroupScalar {
+  def multiplicativeGroupFromOrder(ord: BigInt): AbGroupScalar = new AbGroupScalar {
     require(ord.isProbablePrime(32), "not prime")
 
     override def order: BigInt = ord
@@ -21,9 +21,9 @@ object AbGroupScalar {
     override def empty: BigInt = 1
 
     // TODO use bitLength or bitCount?
-    // TODO is it ok to use Stream?
+    // TODO is it ok to use LazyList?
     override def randElem()(implicit r: Random): BigInt = {
-      Stream.continually(BigInt(ord.bitLength, r) mod ord).filter(_ >= empty).head
+      LazyList.continually(BigInt(ord.bitLength, r) mod ord).filter(_ >= empty).head
     }.ensuring(_ >= empty, "generated value cannot be smaller than the empty value")
 
     override def combine(x: BigInt, y: BigInt): BigInt = (x * y) mod ord
@@ -33,7 +33,7 @@ object AbGroupScalar {
     override def eqv(x: BigInt, y: BigInt): Boolean = x == y
   }
 
-  implicit val curve25519Scalar: AbGroupScalar = fromOrder(Spec.curve25519.getN)
+  implicit val curve25519Scalar: AbGroupScalar = multiplicativeGroupFromOrder(Spec.curve25519.getN)
 
   implicit class Ops(val a: BigInt)(implicit grp: AbGroupScalar) {
     def negate(): BigInt = grp.inverse(a)
