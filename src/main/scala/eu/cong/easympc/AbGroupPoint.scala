@@ -67,7 +67,7 @@ object AbGroupPoint {
 
       override def empty: BigInt = 1 // because prime integer group is multiplicative
 
-      override def randElem()(implicit r: Random): BigInt = ??? // TODO implement elligator2
+      override def randElem()(implicit r: Random): BigInt = ???
 
       override def combine(x: BigInt, y: BigInt): BigInt = (x * y) mod prime
 
