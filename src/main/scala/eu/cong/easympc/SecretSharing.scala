@@ -21,7 +21,7 @@ object SecretSharing {
     val privateCoeff = List(secret) ++ (1 until t) map { _ =>
       grp.randElem()
     }
-    evalAll(privateCoeff)
+    evalAll(n, privateCoeff)
   }
 
   def combine(shares: Seq[XYShare])(implicit grp: AbGroupScalar): BigInt = {
@@ -35,9 +35,10 @@ object SecretSharing {
       .foldLeft(grp.empty)(_ <+> _)
   }
 
-  private def evalAll(coeffs: List[BigInt])(implicit grp: AbGroupScalar, r: Random): Seq[XYShare] = {
+  // use this function as a deterministic version of share
+  private[easympc] def evalAll(n: Int, coeffs: List[BigInt])(implicit grp: AbGroupScalar): Seq[XYShare] = {
     // evaluate on n points, start at 1 because 0 holds the secret
-    val xs = (1 to coeffs.size).map(BigInt(_))
+    val xs = (1 to n).map(BigInt(_))
     val ys = xs.map(eval(_, coeffs))
     XYShare(xs, ys)
   }

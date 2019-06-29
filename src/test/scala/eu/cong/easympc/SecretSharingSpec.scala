@@ -24,7 +24,22 @@ class SecretSharingSpec extends FlatSpec with ScalaCheckDrivenPropertyChecks wit
     SecretSharing.eval(BigInt(9), coeffs) should be(BigInt(10))
   }
 
-  "lagrange basis" should "work on an example" in {}
+  "lagrange basis" should "work on an example" in {
+    // we evaluate on the points (x0, x1, x2, x3) = (1, 2, 3, 4)
+    // lagrange_basis(j) = product[ -x_m / (x_j-x_m) ] mod 13
+    // for m = 0 to 3 where m != j
+    // lagrange_basis(0) = 4
+    // lagrange_basis(1) = 7
+    // lagrange_basis(2) = 4
+    // lagrange_basis(3) = 12
+    val p = 13
+    implicit val smallGroup: AbGroupScalar = AbGroupScalar.additiveGroupFromOrder(p)
+    val xs = Seq(1, 2, 3, 4).map(BigInt(_))
+    SecretSharing.lagrange_basis(0)(0, xs) should be(BigInt(4))
+    SecretSharing.lagrange_basis(1)(0, xs) should be(BigInt(7))
+    SecretSharing.lagrange_basis(2)(0, xs) should be(BigInt(4))
+    SecretSharing.lagrange_basis(3)(0, xs) should be(BigInt(12))
+  }
 
   private def pairGen(max: Int) =
     for {
