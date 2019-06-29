@@ -7,8 +7,19 @@ import spire.laws._
 class AbGroupScalarTest extends WordSpec with Checkers {
 
   "a small scalar group" should {
-    implicit val grp = AbGroupScalar.multiplicativeGroupFromOrder(13)
+    import AbGroupScalar.Ops
+    implicit val grp = AbGroupScalar.additiveGroupFromOrder(13)
     implicit val arb = ArbitraryHelper.arbScalar(grp)
+
+    "additive ops sanity checks" in {
+      check((x: BigInt, y: BigInt) => (x <+> y <-> y) == x)
+    }
+
+    /*
+    "multiplicative ops sanity checks" in {
+      check((x: BigInt, y: BigInt) => (x <*> y </> y) == x)
+    }
+     */
 
     val ruleSet = GroupLaws[BigInt].abGroup
     for ((id, prop) <- ruleSet.all.properties)
