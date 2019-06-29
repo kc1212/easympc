@@ -18,15 +18,10 @@ object SecretSharing {
 
   def share(secret: BigInt, t: Int, n: Int)(implicit grp: AbGroupScalar, r: Random): Seq[XYShare] = {
     require(t <= n)
-    // generate t coefficients
     val privateCoeff = List(secret) ++ (1 until t) map { _ =>
       grp.randElem()
     }
-
-    // evaluate on n points, start at 1 because 0 holds the secret
-    val xs = (1 to n).map(BigInt(_))
-    val ys = xs.map(eval(_, privateCoeff))
-    XYShare(xs, ys)
+    evalAll(privateCoeff)
   }
 
   def combine(shares: Seq[XYShare])(implicit grp: AbGroupScalar): BigInt = {
@@ -40,27 +35,24 @@ object SecretSharing {
       .foldLeft(grp.empty)(_ <+> _)
   }
 
-  private def eval(x: BigInt, coeffs: Seq[BigInt])(implicit grp: AbGroupScalar): BigInt = {
+  private def evalAll(coeffs: List[BigInt])(implicit grp: AbGroupScalar, r: Random): Seq[XYShare] = {
+    // evaluate on n points, start at 1 because 0 holds the secret
+    val xs = (1 to coeffs.size).map(BigInt(_))
+    val ys = xs.map(eval(_, coeffs))
+    XYShare(xs, ys)
+  }
+
+  private[easympc] def eval(x: BigInt, coeffs: Seq[BigInt])(implicit grp: AbGroupScalar): BigInt = {
     // evaluate the polynomial represented by coeffs at the point x using Horner's method
     coeffs.reverse.foldLeft(grp.empty) { (accum, coeff) =>
       (accum <*> x) <+> coeff
     }
   }
 
-  private def lagrange_basis(j: Int)(x: BigInt, xs: Seq[BigInt])(implicit grp: AbGroupScalar): BigInt = {
-    // var accum = BigInt(1)
+  private[easympc] def lagrange_basis(j: Int)(x: BigInt, xs: Seq[BigInt])(implicit grp: AbGroupScalar): BigInt = {
     require(0 <= j && j < xs.size)
     xs.indices.filter(_ != j).foldLeft(BigInt(1)) { (accum, m) =>
       accum <*> ((x <-> xs(m)) </> (xs(j) <-> xs(m)))
     }
-    /*
-    for (m <- xs.indices) {
-      if (m != j) {
-        accum =
-      }
-    }
-    accum
-
-   */
   }
 }
