@@ -17,11 +17,12 @@ object SecretSharing {
   }
 
   def share(secret: BigInt, t: Int, n: Int)(implicit grp: AbGroupScalar, r: Random): Seq[XYShare] = {
-    require(t <= n)
-    val privateCoeff = List(secret) ++ (1 until t) map { _ =>
+    require(t <= n, "threshold must be lower than n")
+    println(secret)
+    val privateCoeff = List(secret) ++ (1 until t).map { _ =>
       grp.randElem()
     }
-    evalAll(n, privateCoeff)
+    evalAll(n, privateCoeff).ensuring(_.size == n, "evaluation size is wrong")
   }
 
   def combine(shares: Seq[XYShare])(implicit grp: AbGroupScalar): BigInt = {

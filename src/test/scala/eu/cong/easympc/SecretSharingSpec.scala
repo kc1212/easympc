@@ -41,39 +41,50 @@ class SecretSharingSpec extends FlatSpec with ScalaCheckDrivenPropertyChecks wit
     SecretSharing.lagrange_basis(3)(0, xs) should be(BigInt(12))
   }
 
-  private def pairGen(max: Int) =
+  private def workloadGen(max: Int)(implicit grp: AbGroupScalar) = {
     for {
-      x <- Gen.choose(2, max)
-      y <- Gen.choose(2, max)
-    } yield (x, y)
+      n <- Gen.choose(2, max)
+      xs <- Gen.listOfN(n, ArbitraryHelper.arbScalar.arbitrary)
+      d <- Gen.choose(0, 4)
+    } yield (xs.size + d, xs)
+  }
 
   "int group" should "correctly share secrets in a small group" in {
     val p = 23
     implicit val smallGroup: AbGroupScalar = AbGroupScalar.additiveGroupFromOrder(p)
-    forAll(pairGen(p)) {
-      case (t: Int, n: Int) =>
-        whenever(t > 2 && n <= p && t <= n) {
-          val secret = smallGroup.randElem()
-          val shares = SecretSharing.share(secret, t, n)
-          shares.size should be(n)
-          SecretSharing.combine(shares) should be(secret)
-        }
+    forAll(workloadGen(7)) {
+      case (n, xs) =>
+        val secret = xs(0)
+        val shares = SecretSharing.evalAll(n, xs)
+        shares.size should be(n)
+        SecretSharing.combine(shares) should be(secret)
     }
   }
 
-  /*
   it should "correctly share secrets in a large group" in {
-    val maxShares = 66
     implicit val grp: AbGroupScalar = AbGroupScalar.curve25519Scalar
-    forAll(pairGen(maxShares)) {
-      case (t: Int, n: Int) =>
-        whenever(t > 2 && n <= maxShares && t <= n) {
-          val secret = grp.randElem()
-          val shares = SecretSharing.share(secret, t, n)
-          shares.size should be(n)
-          SecretSharing.combine(shares) should be(secret)
-        }
+    forAll(workloadGen(7)) {
+      case (n, xs) =>
+        val secret = xs(0)
+        val shares = SecretSharing.evalAll(n, xs)
+        shares.size should be(n)
+        SecretSharing.combine(shares) should be(secret)
     }
   }
- */
+
+  private def thresholdGen(max: Int) =
+    for {
+      t <- Gen.choose(2, max)
+      n <- Gen.choose(2, max) suchThat (_ >= t)
+      secret <- ArbitraryHelper.arbScalar.arbitrary
+    } yield (secret, t, n)
+
+  it should "correctly function end to end" in {
+    implicit val grp: AbGroupScalar = AbGroupScalar.curve25519Scalar
+    forAll(thresholdGen(7)) {
+      case (secret, t, n) =>
+        val shares = SecretSharing.share(secret, t, n)
+        SecretSharing.combine(shares) should be(secret)
+    }
+  }
 }
