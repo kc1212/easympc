@@ -5,6 +5,7 @@ import org.bouncycastle.math.ec.ECPoint
 import scala.util.{Success, Try}
 
 trait Encoder[T] {
+  // TODO consider using a stream
   def encode(x: T): Array[Byte]
   def decode(buf: Array[Byte]): Try[T]
 }
