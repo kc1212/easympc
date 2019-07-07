@@ -18,7 +18,6 @@ object SecretSharing {
 
   def share(secret: BigInt, t: Int, n: Int)(implicit grp: AbGroupScalar, r: Random): Seq[Share] = {
     require(t <= n, "threshold must be lower than n")
-    println(secret)
     val privateCoeff = List(secret) ++ (1 until t).map { _ =>
       grp.randElem()
     }
@@ -36,16 +35,16 @@ object SecretSharing {
       .foldLeft(grp.empty)(_ <+> _)
   }
 
+  // evaluate on n points, start at 1 because 0 holds the secret
   // use this function as a deterministic version of share
   private[easympc] def evalAll(n: Int, coeffs: List[BigInt])(implicit grp: AbGroupScalar): Seq[Share] = {
-    // evaluate on n points, start at 1 because 0 holds the secret
     val xs = (1 to n).map(BigInt(_))
     val ys = xs.map(eval(_, coeffs))
     Share(xs, ys)
   }
 
+  // evaluate the polynomial represented by coeffs at the point x using Horner's method
   private[easympc] def eval(x: BigInt, coeffs: Seq[BigInt])(implicit grp: AbGroupScalar): BigInt = {
-    // evaluate the polynomial represented by coeffs at the point x using Horner's method
     coeffs.reverse.foldLeft(grp.empty) { (accum, coeff) =>
       (accum <*> x) <+> coeff
     }
