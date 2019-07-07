@@ -5,18 +5,18 @@ import AbGroupScalar.Ops
 
 object SecretSharing {
 
-  case class XYShare(x: BigInt, y: BigInt)
+  case class Share(x: BigInt, y: BigInt)
 
-  object XYShare {
-    def apply[S](xs: Seq[BigInt], ys: Seq[BigInt]): Seq[XYShare] = {
+  object Share {
+    def apply[S](xs: Seq[BigInt], ys: Seq[BigInt]): Seq[Share] = {
       require(xs.size == ys.size)
       (xs zip ys).map { x =>
-        XYShare(x._1, x._2)
+        Share(x._1, x._2)
       }
     }
   }
 
-  def share(secret: BigInt, t: Int, n: Int)(implicit grp: AbGroupScalar, r: Random): Seq[XYShare] = {
+  def share(secret: BigInt, t: Int, n: Int)(implicit grp: AbGroupScalar, r: Random): Seq[Share] = {
     require(t <= n, "threshold must be lower than n")
     println(secret)
     val privateCoeff = List(secret) ++ (1 until t).map { _ =>
@@ -25,7 +25,7 @@ object SecretSharing {
     evalAll(n, privateCoeff).ensuring(_.size == n, "evaluation size is wrong")
   }
 
-  def combine(shares: Seq[XYShare])(implicit grp: AbGroupScalar): BigInt = {
+  def combine(shares: Seq[Share])(implicit grp: AbGroupScalar): BigInt = {
     val xs = shares.map(_.x)
     val ys = shares.map(_.y)
     val x = grp.empty
@@ -37,11 +37,11 @@ object SecretSharing {
   }
 
   // use this function as a deterministic version of share
-  private[easympc] def evalAll(n: Int, coeffs: List[BigInt])(implicit grp: AbGroupScalar): Seq[XYShare] = {
+  private[easympc] def evalAll(n: Int, coeffs: List[BigInt])(implicit grp: AbGroupScalar): Seq[Share] = {
     // evaluate on n points, start at 1 because 0 holds the secret
     val xs = (1 to n).map(BigInt(_))
     val ys = xs.map(eval(_, coeffs))
-    XYShare(xs, ys)
+    Share(xs, ys)
   }
 
   private[easympc] def eval(x: BigInt, coeffs: Seq[BigInt])(implicit grp: AbGroupScalar): BigInt = {
