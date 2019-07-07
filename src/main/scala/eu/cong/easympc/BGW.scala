@@ -13,7 +13,7 @@ import eu.cong.easympc.SecretSharing.Share
   * @param zeros
   * @tparam T
   */
-case class BGW[T](id: T, roster: Set[T], prog: Expr[T, BigInt], shares: Map[T, Share], zeros: Iterable[Map[T, Share]]) {
+case class BGW[T](id: T, roster: Set[T], prog: Any, shares: Map[T, Share], zeros: Iterable[Map[T, Share]]) {
   def compute(): Either[BigInt, String] = {
     require(roster contains id)
     ???
