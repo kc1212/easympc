@@ -7,15 +7,6 @@ object SecretSharing {
 
   case class Share(x: BigInt, y: BigInt)
 
-  object Share {
-    def apply[S](xs: Seq[BigInt], ys: Seq[BigInt]): Seq[Share] = {
-      require(xs.size == ys.size)
-      (xs zip ys).map { x =>
-        Share(x._1, x._2)
-      }
-    }
-  }
-
   def share(secret: BigInt, t: Int, n: Int)(implicit grp: AbGroupScalar, r: Random): Seq[Share] = {
     require(t <= n, "threshold must be lower than n")
     val privateCoeff = List(secret) ++ (1 until t).map { _ =>
@@ -35,12 +26,17 @@ object SecretSharing {
       .foldLeft(grp.empty)(_ <+> _)
   }
 
+  def zeros(t: Int, n: Int, len: Int)(implicit grp: AbGroupScalar, r: Random): Seq[Seq[Share]] =
+    (0 to len) map { _ =>
+      share(BigInt(0), t, n)
+    }
+
   // evaluate on n points, start at 1 because 0 holds the secret
   // use this function as a deterministic version of share
   private[easympc] def evalAll(n: Int, coeffs: List[BigInt])(implicit grp: AbGroupScalar): Seq[Share] = {
     val xs = (1 to n).map(BigInt(_))
     val ys = xs.map(eval(_, coeffs))
-    Share(xs, ys)
+    makeShares(xs, ys)
   }
 
   // evaluate the polynomial represented by coeffs at the point x using Horner's method
@@ -54,6 +50,13 @@ object SecretSharing {
     require(0 <= j && j < xs.size)
     xs.indices.filter(_ != j).foldLeft(BigInt(1)) { (accum, m) =>
       accum <*> ((x <-> xs(m)) </> (xs(j) <-> xs(m)))
+    }
+  }
+
+  private def makeShares[S](xs: Seq[BigInt], ys: Seq[BigInt]): Seq[Share] = {
+    require(xs.size == ys.size)
+    (xs zip ys).map { x =>
+      Share(x._1, x._2)
     }
   }
 }

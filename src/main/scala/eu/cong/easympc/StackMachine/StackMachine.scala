@@ -4,8 +4,10 @@ import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
 object StackMachine {
+
   // TODO OP should handle errors because it may use external information for the computation
   type OP[T] = (T, T) => T
+
   def apply[T](prog: Iterable[Instruction[T]], addOp: OP[T], mulOp: OP[T]): Try[T] = {
     val stack = mutable.Stack[T]()
     for (inst <- prog) {
