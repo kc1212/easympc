@@ -3,12 +3,12 @@ package eu.cong.easympc
 import java.security.SecureRandom
 
 import org.scalacheck.Gen
-import org.scalatest.{FlatSpec, Matchers, PrivateMethodTester}
+import org.scalatest.{FlatSpec, Matchers}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 import scala.util.Random
 
-class SecretSharingSpec extends FlatSpec with ScalaCheckDrivenPropertyChecks with Matchers with PrivateMethodTester {
+class SecretSharingSpec extends FlatSpec with ScalaCheckDrivenPropertyChecks with Matchers {
   implicit private val r: Random = new Random(new SecureRandom())
 
   "polynomail evaluation" should "work on an example" in {
