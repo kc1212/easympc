@@ -49,7 +49,7 @@ class SecretSharingSpec extends FlatSpec with ScalaCheckDrivenPropertyChecks wit
     } yield (xs.size + d, xs)
   }
 
-  "int group" should "correctly share secrets in a small group" in {
+  "small int group" should "correctly share secrets" in {
     val p = 23
     implicit val smallGroup: AbGroupScalar = AbGroupScalar.additiveGroupFromOrder(p)
     forAll(workloadGen(7)) {
@@ -61,7 +61,7 @@ class SecretSharingSpec extends FlatSpec with ScalaCheckDrivenPropertyChecks wit
     }
   }
 
-  it should "correctly share secrets in a large group" in {
+  "large int group" should "correctly share secrets" in {
     implicit val grp: AbGroupScalar = AbGroupScalar.curve25519Scalar
     forAll(workloadGen(7)) {
       case (n, xs) =>
@@ -79,7 +79,7 @@ class SecretSharingSpec extends FlatSpec with ScalaCheckDrivenPropertyChecks wit
       secret <- ArbitraryHelper.arbScalar.arbitrary
     } yield (secret, t, n)
 
-  it should "correctly function end to end" in {
+  it should "work with randomized coefficients" in {
     implicit val grp: AbGroupScalar = AbGroupScalar.curve25519Scalar
     forAll(thresholdGen(7)) {
       case (secret, t, n) =>
