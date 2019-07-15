@@ -23,39 +23,39 @@ class BeaverTriplesSpec extends WordSpec with ScalaCheckDrivenPropertyChecks wit
     } yield (a, b, x, y, t, n)
 
   private def endToEndTest(a: BigInt, b: BigInt, x: BigInt, y: BigInt, t: Int, n: Int)(implicit grp: AbGroupScalar, r: Random) = {
-    val (a_box, b_box, c_box) = BeaverTriples(a, b, t, n).head
+    val (a_boxes, b_boxes, c_boxes) = BeaverTriples(a, b, t, n).head
 
     // check that beaver triples are generated correctly
-    SecretSharing.combine(c_box) shouldBe (a <*> b)
+    SecretSharing.combine(c_boxes) shouldBe (a <*> b)
 
-    val x_box = SecretSharing.share(x, t, n)
-    val y_box = SecretSharing.share(y, t, n)
+    val x_boxes = SecretSharing.share(x, t, n)
+    val y_boxes = SecretSharing.share(y, t, n)
 
-    val (x_a_shares, y_b_shares) = (0 until n).map { i =>
-      x_box(i).x shouldBe y_box(i).x
-      x_box(i).x shouldBe a_box(i).x
-      x_box(i).x shouldBe b_box(i).x
+    val (x_a_boxes, y_b_boxes) = (0 until n).map { i =>
+      x_boxes(i).x shouldBe y_boxes(i).x
+      x_boxes(i).x shouldBe a_boxes(i).x
+      x_boxes(i).x shouldBe b_boxes(i).x
 
-      val x_a_box = x_box(i).y <-> a_box(i).y
-      val y_b_box = y_box(i).y <-> b_box(i).y
-      (Share(x_box(i).x, x_a_box), Share(y_box(i).x, y_b_box))
+      val x_a_box = x_boxes(i).y <-> a_boxes(i).y
+      val y_b_box = y_boxes(i).y <-> b_boxes(i).y
+      (Share(x_boxes(i).x, x_a_box), Share(y_boxes(i).x, y_b_box))
     }.unzip
 
     // check that x-a and y-b are correctly computed
-    val x_a = SecretSharing.combine(x_a_shares)
-    val y_b = SecretSharing.combine(y_b_shares)
+    val x_a = SecretSharing.combine(x_a_boxes)
+    val y_b = SecretSharing.combine(y_b_boxes)
     x_a shouldBe (x <-> a)
     y_b shouldBe (y <-> b)
 
     // check that the final value z=x*y is correct
-    val z_box = (0 until n).map { i =>
-      c_box(i).x shouldBe x_box(i).x
-      c_box(i).x shouldBe y_box(i).x
+    val z_boxes = (0 until n).map { i =>
+      c_boxes(i).x shouldBe x_boxes(i).x
+      c_boxes(i).x shouldBe y_boxes(i).x
 
-      val z_box = c_box(i).y <+> (x_box(i).y <*> y_b) <+> (y_box(i).y <*> x_a) <-> (x_a <*> y_b)
-      Share(c_box(i).x, z_box)
+      val z_box = c_boxes(i).y <+> (x_boxes(i).y <*> y_b) <+> (y_boxes(i).y <*> x_a) <-> (x_a <*> y_b)
+      Share(c_boxes(i).x, z_box)
     }
-    val z = SecretSharing.combine(z_box)
+    val z = SecretSharing.combine(z_boxes)
     z shouldBe (x <*> y)
   }
 
