@@ -61,7 +61,7 @@ class SecretSharingSpec extends FlatSpec with ScalaCheckDrivenPropertyChecks wit
     }
   }
 
-  "large int group" should "correctly share secrets" in {
+  "large int group" should "correctly share and then combine" in {
     implicit val grp: AbGroupScalar = AbGroupScalar.curve25519Scalar
     forAll(workloadGen(7)) {
       case (n, xs) =>
@@ -77,14 +77,29 @@ class SecretSharingSpec extends FlatSpec with ScalaCheckDrivenPropertyChecks wit
       t <- Gen.choose(2, max)
       n <- Gen.choose(2, max) suchThat (_ >= t)
       secret <- ArbitraryHelper.arbScalar.arbitrary
-    } yield (secret, t, n)
+      const <- ArbitraryHelper.arbScalar.arbitrary
+    } yield (secret, const, t, n)
 
-  it should "work with randomized coefficients" in {
+  it should "correctly share and then combine with randomized coefficients" in {
     implicit val grp: AbGroupScalar = AbGroupScalar.curve25519Scalar
     forAll(thresholdGen(7)) {
-      case (secret, t, n) =>
+      case (secret, _, t, n) =>
         val shares = SecretSharing.share(secret, t, n)
         SecretSharing.combine(shares) should be(secret)
+    }
+  }
+
+  it should "correctly share and then combine when multiplied by a constant" in {
+    import eu.cong.easympc.SecretSharing.Share
+    import eu.cong.easympc.AbGroupScalar.Ops
+
+    implicit val grp: AbGroupScalar = AbGroupScalar.curve25519Scalar
+    forAll(thresholdGen(7)) {
+      case (secret, const, t, n) =>
+        val shares = SecretSharing.share(secret, t, n).map { share =>
+          Share(share.x, share.y <*> const)
+        }
+        SecretSharing.combine(shares) should be(secret <*> const)
     }
   }
 }
