@@ -1,35 +1,40 @@
 package eu.cong.easympc.StackMachine
 
-import scala.collection.mutable
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.{ExecutionContext, Future}
 
 object StackMachine {
 
-  // TODO OP should handle errors because it may use external information for the computation
-  type OP[T] = (T, T) => T
+  type OP[T] = (T, T) => Future[T]
 
-  def apply[T](prog: Iterable[Instruction[T]], addOp: OP[T], mulOp: OP[T]): Try[T] = {
-    val stack = mutable.Stack[T]()
+  def apply[T](prog: Iterable[Instruction[T]], addOp: OP[T], mulOp: OP[T])(implicit ec: ExecutionContext): Future[T] = {
+    // stack is used for chaining multiple futures
+    var stack = Future { List[T]() }
     for (inst <- prog) {
-      inst match {
+      stack = inst match {
         case Push(x) =>
-          stack.push(x)
+          stack map { x :: _ }
         case Add() =>
-          val l = stack.pop()
-          val r = stack.pop()
-          stack.push(addOp(l, r))
+          for {
+            s <- stack
+            res <- addOp(s(0), s(1)) // take the first two elements
+          } yield res :: s.drop(2)
         case Mul() =>
-          val l = stack.pop()
-          val r = stack.pop()
-          stack.push(mulOp(l, r))
+          for {
+            s <- stack
+            res <- mulOp(s(0), s(1))
+          } yield res :: s.drop(2)
       }
     }
 
     // at the end of the operation, we should only see one value on the stack
-    if (stack.size != 1) {
-      Failure(new ArithmeticException("final stack size is not 1"))
-    } else {
-      Success(stack.pop())
+    for {
+      s <- stack
+    } yield {
+      if (s.size != 1) {
+        throw new ArithmeticException("final stack size is not 1")
+      } else {
+        s.head
+      }
     }
   }
 }
