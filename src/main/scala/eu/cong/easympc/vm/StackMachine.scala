@@ -1,4 +1,4 @@
-package eu.cong.easympc.StackMachine
+package eu.cong.easympc.vm
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -7,10 +7,8 @@ object StackMachine {
   type OP[T] = (T, T) => Future[T]
 
   def apply[T](prog: Iterable[Instruction[T]], addOp: OP[T], mulOp: OP[T])(implicit ec: ExecutionContext): Future[T] = {
-    // stack is used for chaining multiple futures
-    var stack = Future { List[T]() }
-    for (inst <- prog) {
-      stack = inst match {
+    val finalStack = prog.foldLeft(Future { List[T]() }) { (stack, inst) =>
+      inst match {
         case Push(x) =>
           stack map { x :: _ }
         case Add() =>
@@ -28,12 +26,12 @@ object StackMachine {
 
     // at the end of the operation, we should only see one value on the stack
     for {
-      s <- stack
+      stack <- finalStack
     } yield {
-      if (s.size != 1) {
+      if (stack.size != 1) {
         throw new ArithmeticException("final stack size is not 1")
       } else {
-        s.head
+        stack.head
       }
     }
   }

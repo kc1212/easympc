@@ -1,4 +1,4 @@
-package eu.cong.easympc.StackMachine
+package eu.cong.easympc.vm
 
 import org.scalatest.Matchers
 import org.scalatest.wordspec.AsyncWordSpec

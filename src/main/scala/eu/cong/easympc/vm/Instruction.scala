@@ -1,4 +1,4 @@
-package eu.cong.easympc.StackMachine
+package eu.cong.easympc.vm
 
 sealed trait Instruction[+T]
 case class Add[T]() extends Instruction[T]
