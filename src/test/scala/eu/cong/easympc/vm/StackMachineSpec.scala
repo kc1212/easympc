@@ -7,11 +7,11 @@ import scala.concurrent.Future
 
 class StackMachineSpec extends AsyncWordSpec with Matchers {
 
-  def addOp(l: Int, r: Int): Future[Int] = Future { l + r }
+  def addOp(l: Int, r: Int, pc: Int): Future[Int] = Future { l + r }
 
-  def mulOp(l: Int, r: Int): Future[Int] = Future { l * r }
+  def mulOp(l: Int, r: Int, pc: Int): Future[Int] = Future { l * r }
 
-  def invalidOp(l: Int, r: Int): Future[Int] = throw new IllegalArgumentException
+  def invalidOp(l: Int, r: Int, pc: Int): Future[Int] = throw new IllegalArgumentException
 
   "stack machine" must {
     "add integers" in {
