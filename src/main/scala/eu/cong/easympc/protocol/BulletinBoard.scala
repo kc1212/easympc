@@ -7,14 +7,13 @@ import scala.collection.mutable
 
 object BulletinBoard {
   sealed trait Msg
-  final case class Set(replyTo: ActorRef[Ok], k: Int, v: BigInt) extends Msg
-  final case class Ok(k: Int) extends Msg
+  final case class Set(replyTo: ActorRef[SetResult], k: Int, v: BigInt) extends Msg
   final case class Get(replyTo: ActorRef[Val], k: Int) extends Msg
   final case class Val(v: BigInt) extends Msg
-}
 
-class BulletinBoard() {
-  import BulletinBoard._
+  sealed trait SetResult extends Msg
+  final case class Ok(k: Int) extends SetResult
+  final case class Fail(k: Int) extends SetResult
 
   val behavior: Behavior[Msg] = Behaviors.setup { ctx =>
     val storage = mutable.Map[Int, BigInt]()
@@ -22,9 +21,14 @@ class BulletinBoard() {
     val inner: Behavior[Msg] =
       Behaviors.receive {
         case (ctx, Set(sender, k, v)) =>
-          storage put (k, v)
-          sender ! Ok(k)
-          buffer.unstashAll(ctx, Behaviors.same)
+          if (storage.contains(k)) {
+            sender ! Fail(k)
+            Behaviors.same
+          } else {
+            storage put (k, v)
+            sender ! Ok(k)
+            buffer.unstashAll(ctx, Behaviors.same)
+          }
         case (_, msg @ Get(sender, k)) =>
           // If the value exists, the actor replies, otherwise stash it and try again later.
           storage get k match {

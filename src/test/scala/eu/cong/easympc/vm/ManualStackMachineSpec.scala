@@ -24,7 +24,7 @@ class ManualStackMachineSpec extends WordSpec with Matchers {
       runner(instructions) shouldBe 3
     }
 
-    "multiple intergers" in {
+    "multiple integers" in {
       val instructions = List(Push(3), Push(2), Mul())
       runner(instructions) shouldBe 6
     }
