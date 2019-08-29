@@ -15,7 +15,7 @@ object BulletinBoard {
   final case class Ok(k: Int) extends SetResult
   final case class Fail(k: Int) extends SetResult
 
-  val behavior: Behavior[Msg] = Behaviors.setup { ctx =>
+  def behavior(): Behavior[Msg] = Behaviors.setup { ctx =>
     val storage = mutable.Map[Int, BigInt]()
     val buffer = StashBuffer[Msg](capacity = 100)
     val inner: Behavior[Msg] =

@@ -10,7 +10,7 @@ class BulletinBoardSpec extends WordSpec with ScalaCheckDrivenPropertyChecks {
     "remember records" in {
       forAll { (k1: Int, k2: Int, v: BigInt) =>
         whenever(k1 != k2) {
-          val kit = BehaviorTestKit(behavior)
+          val kit = BehaviorTestKit(behavior())
           val inbox = TestInbox[Msg]()
 
           kit.run(Set(inbox.ref, k1, v))
@@ -33,7 +33,7 @@ class BulletinBoardSpec extends WordSpec with ScalaCheckDrivenPropertyChecks {
 
     "fail when the key already exists" in {
       forAll { (k: Int, v: BigInt) =>
-        val kit = BehaviorTestKit(behavior)
+        val kit = BehaviorTestKit(behavior())
         val inbox = TestInbox[Msg]()
 
         kit.run(Set(inbox.ref, k, v))
